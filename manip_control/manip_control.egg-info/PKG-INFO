@@ -1,0 +1,18 @@
+Metadata-Version: 1.2
+Name: manip-control
+Version: 0.1.0
+Summary: A RTB-based robot manipulation control package
+Home-page: UNKNOWN
+Author: Tomek Żebrowski
+Author-email: zebromek@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Keywords: robotics,rtb,manipulation
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.8
