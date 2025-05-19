@@ -4,14 +4,13 @@ import numpy as np
 import spatialmath as sm
 import spatialgeometry as sg
 import roboticstoolbox as rtb
-from swift import Swift
 from typing import List
 from arm_servo.command import Command, CommandType
 from arm_servo.ros_robot_interface import RosRobotInterface
 from arm_servo.ros_command_receiver import RosCommandReceiver
 from arm_servo.motion_control import TwistController, PoseServo
+from arm_servo.ros_visualizer import RosVisualizer
 from arm_servo.utils import load_urdf
-from ros_middleware.ros2 import Ros2Middleware
 
 
 class ArmControllerConfig:
@@ -23,10 +22,10 @@ class ArmControllerConfig:
     singularity_avoidance_B: float = 1.491  # Values based on paper
 
     # Robot params
-    robot_urdf_path: str = "robot_urdf/sirius2_manip.urdf"
+    robot_urdf_path: str = "robot_urdf/sirius2_manip.urdf.xacro"
 
     # ROS params
-    ros_version: str = "ros2"
+    ros_version: str = "ros1"
     node_name: str = "manip_control"
     twist_topic: str = "/twist_cmd"
     pose_topic: str = "/pose_cmd"
@@ -36,7 +35,7 @@ class ArmControllerConfig:
     robot_joint_names: List[str] = ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6"]
 
     # Visualization params
-    use_sim: bool = True
+    use_sim: bool = False
     sim_browser: str = "firefox"
 
 
@@ -44,7 +43,7 @@ DEFAULT_CONFIG = ArmControllerConfig()
 
 
 class ArmController:
-    def __init__(self, config: ArmControllerConfig, robot_interface: RosRobotInterface, command_interface: RosCommandReceiver, env):
+    def __init__(self, config: ArmControllerConfig, robot_interface: RosRobotInterface, command_interface: RosCommandReceiver, env, viz):
         self.config = config
         self.command = None
         self.robot_interface = robot_interface
@@ -56,6 +55,7 @@ class ArmController:
         self.ee_axes = sg.Axes(0.1)
         self.command_timeout = config.command_timeout
         self.env = env
+        self.viz = viz
         self.compute_duration = 0
         self.loop_duration = 100
 
@@ -82,6 +82,8 @@ class ArmController:
 
             if self.config.use_sim:
                 self.env.step(dt)
+            if self.viz:
+                self.viz.visualize_goal_pose(self.goal.T, "base_link")
             
             # Try to make the loop run at the correct frequency
             sleep_time = dt - ((time.monotonic() - start_time) % dt)
@@ -142,10 +144,10 @@ def main():
     # Start ros2 integration
     if config.ros_version == "ros2":
         from ros_middleware.ros2 import Ros2Middleware
-        ros = Ros2Middleware("manip_control")
+        ros = Ros2Middleware(config.node_name)
     elif config.ros_version == "ros1":
         from ros_middleware.ros1 import Ros1Middleware
-        ros = Ros1Middleware("manip_control")
+        ros = Ros1Middleware(config.node_name)
     else:
         raise ValueError(f"Invalid ROS version: {config.ros_version}. Must be either 'ros1' or 'ros2'.")
 
@@ -153,8 +155,15 @@ def main():
 
     robot_interface = RosRobotInterface(ros, config.robot_joint_names, config.robot_state_topic, config.robot_command_topic)
     command_interface = RosCommandReceiver(ros, config.twist_topic, config.pose_topic, config.joint_topic)
+
+    if config.use_sim:
+        from swift import Swift
     env = Swift() if config.use_sim else None
-    arm_controller = ArmController(config, robot_interface, command_interface, env)
+
+    # viz = None
+    viz = RosVisualizer(ros, "/manip_goal")
+
+    arm_controller = ArmController(config, robot_interface, command_interface, env, viz)
 
     if config.use_sim:
         env.launch(realtime=False, browser=config.sim_browser)

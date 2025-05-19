@@ -1,5 +1,6 @@
 import threading
 import rospy
+from rospy.exceptions import ROSInterruptException
 
 
 class Ros1Middleware:
@@ -15,14 +16,14 @@ class Ros1Middleware:
     def _spin(self):
         try:
             rospy.spin()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, ROSInterruptException):
             pass
 
     def create_publisher(self, topic_name: str, message_type):
         return rospy.Publisher(topic_name, message_type, queue_size=10)
     
     def create_subscriber(self, topic_name: str, message_type, callback):
-        return rospy.Subscriber(topic_name, message_type, queue_size=10)
+        return rospy.Subscriber(topic_name, message_type, callback, queue_size=10)
 
     def stop(self):
         rospy.signal_shutdown("Stopped by the user")

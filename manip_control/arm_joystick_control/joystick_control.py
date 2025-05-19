@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import List
-from ros_middleware.ros2 import Ros2Middleware
+from typing import List, Dict
+from ros_middleware.base import RosMiddleware
 from arm_joystick_control.ros_joy_receiver import RosJoyReceiver
 from arm_joystick_control.ros_command_sender import RosCommandSender
 from arm_joystick_control.utils import max_abs, trig_to_axis
+import time
 
 class JoystickControlConfig:
     max_linear_velocity: float = 0.2
@@ -16,6 +17,7 @@ class JoystickControlConfig:
     joint_topic: str = "/joint_cmd"
     gripper_topic: str = "/gripper_cmd"
     joy_topic: str = "/joy"
+    ros_version: str = "ros1"
 
 DEFAULT_CONFIG = JoystickControlConfig()
 
@@ -57,7 +59,7 @@ class JoystickControl():
         self.frame = config.base_frame_id
         self.gui = None
 
-        self.ros = Ros2Middleware(config.node_name)
+        self.ros = self._start_ros(config)
         self.ros.start()
         self.joy_receiver = RosJoyReceiver(self.ros, config.joy_topic)
         self.command_sender = RosCommandSender(self.ros, config.twist_topic, config.joint_topic, config.gripper_topic)
@@ -66,13 +68,13 @@ class JoystickControl():
         self.joy_receiver.register_callback(self.receive_command)
         try:
             while True:
-                pass
+                time.sleep(0.02)
         except KeyboardInterrupt:
             pass
         finally:
             self.ros.stop()
 
-    def receive_command(self, raw_axes: list[float], raw_buttons: list[int]):
+    def receive_command(self, raw_axes: List[float], raw_buttons: List[int]):
         buttons = self._process_buttons(raw_buttons)
         self._handle_buttons(buttons)
         self._update_gui(raw_axes, raw_buttons)
@@ -80,7 +82,7 @@ class JoystickControl():
         self._publish_command(axes)
         self._control_gripper(axes[self.Axis.GRIPPER])
     
-    def _process_axes(self, axes: list[float]) -> dict[Axis, float]:
+    def _process_axes(self, axes: List[float]) -> Dict[Axis, float]:
         return  {
             self.Axis.LINEAR_X: axes[1],
             self.Axis.LINEAR_Y: max_abs(axes[0], axes[3]),
@@ -97,7 +99,7 @@ class JoystickControl():
             self.Axis.JOINT_6: -axes[0],
         }
     
-    def _process_buttons(self, buttons: list[int]) -> dict[Button, bool]:
+    def _process_buttons(self, buttons: List[int]) -> Dict[Button, bool]:
         return {
             self.Button.SET_FRAME_BASE: buttons[0],
             self.Button.SET_FRAME_TOOL: buttons[1],
@@ -105,7 +107,7 @@ class JoystickControl():
             self.Button.CHANGE_MOVEMENT_MODE: buttons[4] or buttons[5],
         }
 
-    def _handle_buttons(self, buttons: dict[Button, bool]):
+    def _handle_buttons(self, buttons: Dict[Button, bool]):
         if buttons[self.Button.SET_FRAME_TOOL]:
             self.frame = self.config.ee_frame_id
             self.space_mode = self.SpaceMode.CARTESIAN
@@ -120,7 +122,7 @@ class JoystickControl():
         else:
             self.movement_mode = self.MovementMode.LINEAR
         
-    def _publish_command(self, axes: dict[Axis, float]):
+    def _publish_command(self, axes: Dict[Axis, float]):
         if self.space_mode == self.SpaceMode.CARTESIAN:
             if self.movement_mode == self.MovementMode.LINEAR:
                 command = [
@@ -174,6 +176,17 @@ class JoystickControl():
     def _update_gui(self, axes, buttons):
         if self.gui is not None:
             self.gui.update(axes, buttons, self.space_mode, self.movement_mode, self.frame)
+    
+    def _start_ros(self, config: JoystickControlConfig) -> RosMiddleware:
+        if config.ros_version == "ros2":
+            from ros_middleware.ros2 import Ros2Middleware
+            ros = Ros2Middleware(config.node_name)
+        elif config.ros_version == "ros1":
+            from ros_middleware.ros1 import Ros1Middleware
+            ros = Ros1Middleware(config.node_name)
+        else:
+            raise ValueError(f"Invalid ROS version: {config.ros_version}. Must be either 'ros1' or 'ros2'.")
+        return ros
 
 
 if __name__ == "__main__":

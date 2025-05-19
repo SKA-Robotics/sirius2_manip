@@ -4,6 +4,7 @@ import roboticstoolbox as rtb
 from sensor_msgs.msg import JointState
 import threading
 from ros_middleware.base import RosMiddleware
+import time
 
 class RosRobotInterface:
     def __init__(self, ros: RosMiddleware, joint_names: List[str], state_topic: str, command_topic: str):
@@ -38,7 +39,7 @@ class RosRobotInterface:
         if not self.state_received:
             print(f"Waiting for robot joint state on topic {self.state_topic}")
             while not self.state_received:
-                pass
+                time.sleep(0.1)
             print("Robot joint state received")
         with self.joint_state_lock:
             return self.q, self.qd

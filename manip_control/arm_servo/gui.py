@@ -6,8 +6,8 @@ import numpy as np
 from arm_servo.arm_controller import DEFAULT_CONFIG, ArmController
 from arm_servo.ros_command_receiver import RosCommandReceiver
 from arm_servo.ros_robot_interface import RosRobotInterface
+from arm_servo.ros_visualizer import RosVisualizer
 from arm_servo.command import CommandType
-from swift import Swift
 
 class ArmControllerGui:
     def __init__(self, arm_controller: ArmController, window: curses.window):
@@ -74,8 +74,17 @@ def main(window: curses.window):
 
     robot_interface = RosRobotInterface(ros, config.robot_joint_names, config.robot_state_topic, config.robot_command_topic)
     command_interface = RosCommandReceiver(ros, config.twist_topic, config.pose_topic, config.joint_topic)
-    env = Swift() if config.use_sim else None
-    arm_controller = ArmController(config, robot_interface, command_interface, env)
+
+    if config.use_sim:
+        from swift import Swift
+        env = Swift()
+    else:
+        env = None
+
+    # viz = None
+    viz = RosVisualizer(ros, "/manip_goal")
+
+    arm_controller = ArmController(config, robot_interface, command_interface, env, viz)
 
     if config.use_sim:
         env.launch(realtime=False, browser=config.sim_browser)

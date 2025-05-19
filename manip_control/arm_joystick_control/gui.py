@@ -2,7 +2,7 @@ from arm_joystick_control.joystick_control import JoystickControl
 import os
 import time
 import curses
-from typing import Tuple
+from typing import Tuple, List
 
 class TerminalGui:
     def __init__(self, window: curses.window):
@@ -24,7 +24,7 @@ class TerminalGui:
                                   " use triggers for gripper ctrl", curses.color_pair(1))
         self.window.refresh()
 
-    def update(self, axes: list[float], buttons: list[int], space_mode: JoystickControl.SpaceMode, movement_mode: JoystickControl.MovementMode, 
+    def update(self, axes: List[float], buttons: List[int], space_mode: JoystickControl.SpaceMode, movement_mode: JoystickControl.MovementMode, 
               frame_id: str):
         if time.monotonic() - self.last_update < self.update_interval:
             return
@@ -74,7 +74,7 @@ class TerminalGui:
             else:
                 return ((1, "-j5", "+j5", 1, "-j6", "+j6"), (1, "-j3", "+j3", 1, "-j4", "+j4"))
     
-    def _get_marker_pos(self, axes: list[float]):
+    def _get_marker_pos(self, axes: List[float]):
         size_x = 4
         size_y = 2
         left_x = size_x - int(axes[0] * size_x) + 1

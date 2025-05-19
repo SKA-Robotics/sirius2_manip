@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
-        - /RobotModel1/Status1
       Splitter Ratio: 0.5
     Tree Height: 716
   - Class: rviz/Selection
@@ -58,8 +57,7 @@ Visualization Manager:
       Collision Enabled: false
       Enabled: true
       Links:
-        All Links Enabled:
-          {}
+        All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
@@ -68,30 +66,37 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         link1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         link2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         link3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         link4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         link5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         link6:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         tool:
           Alpha: 1
           Show Axes: false
@@ -102,6 +107,31 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Alpha: 1
+      Class: rviz/Axes
+      Enabled: true
+      Length: 0.10000000149011612
+      Name: Axes
+      Radius: 0.004999999888241291
+      Reference Frame: tool
+      Show Trail: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.10000000149011612
+      Axes Radius: 0.004999999888241291
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Axes
+      Topic: /manip_goal
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -130,7 +160,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.916452407836914
+      Distance: 1.720931053161621
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -138,17 +168,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 0.20332007110118866
+        Y: 0.028679417446255684
+        Z: 0.30260539054870605
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.785398006439209
+      Pitch: 0.5503982901573181
       Target Frame: <Fixed Frame>
-      Yaw: 0.785398006439209
+      Yaw: 0.1153961718082428
     Saved: ~
 Window Geometry:
   Displays:
