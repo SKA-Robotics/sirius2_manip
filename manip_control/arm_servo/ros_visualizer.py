@@ -19,7 +19,7 @@ class RosVisualizer:
 
         rotation_matrix = pose[:3, :3]
         try:
-            quat = sm.UnitQuaternion(rotation_matrix)
+            quat = sm.Quaternion(rotation_matrix)
             command.pose.orientation.x = quat.A[1]
             command.pose.orientation.y = quat.A[2]
             command.pose.orientation.z = quat.A[3]

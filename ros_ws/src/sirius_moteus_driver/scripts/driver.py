@@ -100,6 +100,9 @@ class Node:
                     *[joint.step() for joint in self.joints.values()]), 0.05)
         except asyncio.TimeoutError:
             pass
+        except RuntimeError as e:
+            print(e)
+            return
 
         msg = JointState()
         msg.header = Header()

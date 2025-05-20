@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
+import time
 from can_msgs.msg import Frame
 import roboszpon_interface
 from sensor_msgs.msg import JointState
