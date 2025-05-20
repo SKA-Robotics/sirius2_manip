@@ -37,7 +37,9 @@ class TwistController:
         """
 
         J = self.robot.jacobe(q, tool=self.robot.tool)
-        c = np.sqrt(np.linalg.det((J @ J.T)))
+        detJJT = np.linalg.det(J @ J.T)
+        detJJT = max(0.0, detJJT) # Due to numerical errors detJJT sometimes comes out negative - clamp it
+        c = np.sqrt(detJJT)
         l = self.A / (np.tan(c + self.B))
         return J.T @ np.linalg.inv(J @ J.T + l * np.eye(J.shape[0]))
 
