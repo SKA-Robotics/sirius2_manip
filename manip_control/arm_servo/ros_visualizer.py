@@ -18,10 +18,13 @@ class RosVisualizer:
         command.pose.position.z = pose[2, 3]
 
         rotation_matrix = pose[:3, :3]
-        quat = sm.UnitQuaternion(rotation_matrix)
-        command.pose.orientation.x = quat.A[1]
-        command.pose.orientation.y = quat.A[2]
-        command.pose.orientation.z = quat.A[3]
-        command.pose.orientation.w = quat.A[0]
+        try:
+            quat = sm.UnitQuaternion(rotation_matrix)
+            command.pose.orientation.x = quat.A[1]
+            command.pose.orientation.y = quat.A[2]
+            command.pose.orientation.z = quat.A[3]
+            command.pose.orientation.w = quat.A[0]
 
-        self.pose_goal_publisher.publish(command)
+            self.pose_goal_publisher.publish(command)
+        except Exception as e:
+            print(e)

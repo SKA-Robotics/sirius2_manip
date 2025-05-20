@@ -30,8 +30,8 @@ class ArmControllerConfig:
     twist_topic: str = "/twist_cmd"
     pose_topic: str = "/pose_cmd"
     joint_topic: str = "/joint_cmd"
-    robot_state_topic: str = "/joint_states"
-    robot_command_topic: str = "/set_joint_states"
+    robot_state_topic: str = "/manip/joint_states"
+    robot_command_topic: str = "/manip/set_joint_states"
     robot_joint_names: List[str] = ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6"]
 
     # Visualization params

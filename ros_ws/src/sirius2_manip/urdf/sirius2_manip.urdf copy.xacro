@@ -6,7 +6,7 @@
       <geometry>
         <mesh filename="package://sirius2_manip/meshes/global_roll_assembly.STL" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.5708"/>
+      <origin xyz="0.0 0.0 0.1" rpy="0.0 0.0 1.5708"/>
       <material name="grey">
         <color rgba="0.64 0.13 0.91 1.0"/>
       </material>
@@ -15,8 +15,9 @@
       <geometry>
           <mesh filename="package://sirius2_manip/meshes/global_roll_assembly.STL" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.5708"/>
+      <origin xyz="0.0 0.0 0.1" rpy="0.0 0.0 1.5708"/>
     </collision>
+
   </link>
 
   <link name="link1">
@@ -24,7 +25,7 @@
       <geometry>
         <mesh filename="package://sirius2_manip/meshes/base_assy.STL" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 -1.5708"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.5708"/>
       <material name="purple">
         <color rgba="0.64 0.13 0.91 1.0"/>
       </material>
@@ -33,7 +34,7 @@
       <geometry>
           <mesh filename="package://sirius2_manip/meshes/base_assy.STL" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 -1.5708"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.5708"/>
     </collision>
   </link>
 
@@ -42,7 +43,7 @@
       <geometry>
         <mesh filename="package://sirius2_manip/meshes/GP1.STL" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin xyz="-0.02727 0 0" rpy="0.0 0.0 3.14159265359"/>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
       <material name="pink">
         <color rgba="0.902 0.349 0.971 1.0"/>
       </material>
@@ -51,7 +52,7 @@
       <geometry>
         <mesh filename="package://sirius2_manip/meshes/GP1.STL" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin xyz="-0.02727 0 0" rpy="0.0 0.0 3.14159265359"/>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
     </collision>
   </link>
 
@@ -60,7 +61,7 @@
       <geometry>
         <mesh filename="package://sirius2_manip/meshes/GP2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
-     <origin xyz="-0.012 0 0" rpy="1.5708 0.0 3.14159265359"/>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
       <material name="purple">
         <color rgba="0.64 0.13 0.91 1.0"/>
       </material>
@@ -69,7 +70,7 @@
       <geometry>
           <mesh filename="package://sirius2_manip/meshes/GP2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin xyz="-0.012 0 0" rpy="1.5708 0.0 3.14159265359"/>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
     </collision>
   </link>
 
@@ -134,31 +135,31 @@
     <child link="link1"/>
     <axis xyz="0 0 1"/>
     <limit lower="-3.14" upper="3.14" effort="1000.0" velocity="0.5"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
   </joint>
 
   <joint name="joint2" type="revolute">
     <parent link="link1"/>
     <child link="link2"/>
     <axis xyz="1 0 0"/>
-    <limit lower="-1.25" upper="1.25" effort="1000.0" velocity="0.5"/>
-    <origin xyz="0.0 0.0 0.07" rpy="0 0 1.57079632679"/>
+    <limit lower="-1.58" upper="1.58" effort="1000.0" velocity="0.5"/>
+    <origin xyz="0.0 0.02727 0.07" rpy="0 0 1.57079632679"/>
   </joint>
 
   <joint name="joint3" type="revolute">
     <parent link="link2"/>
     <child link="link3"/>
     <axis xyz="1 0 0"/>
-    <limit lower="-1.5708" upper="3.14" effort="1000.0" velocity="0.5"/>
-    <origin xyz="-0.06 0 0.495" rpy="1.57079632679 0 0"/>
+    <limit lower="-1.58" upper="1.58" effort="1000.0" velocity="0.5"/>
+    <origin xyz="0.04573 0 0.495" rpy="1.57079632679 0 0"/>
   </joint>
 
   <joint name="joint4" type="revolute">
     <parent link="link3"/>
     <child link="link4"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-3.1415927" upper="2.61799388" effort="1000.0" velocity="0.5"/>
-    <origin xyz="-0.072 0.29 0.0" rpy="-1.57079632679 0 0"/>
+    <limit lower="-3.14" upper="3.14" effort="1000.0" velocity="0.5"/>
+    <origin xyz="0.06 0 0.29" rpy="0 0 0"/>
   </joint>
 
   <joint name="joint5" type="revolute">
@@ -170,7 +171,7 @@
   </joint>
 
   <joint name="joint6" type="revolute">
-    <origin xyz="0 0.0 0.04" rpy="0 0 -1.5708"/>
+    <origin xyz="0 0.0 0.04" rpy="0 0 0"/>
     <parent link="link5"/>
     <child link="link6"/>
     <axis xyz="0 0 1"/>

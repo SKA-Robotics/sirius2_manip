@@ -6,6 +6,8 @@ from sensor_msgs.msg import JointState
 
 DEFAULT_JOINT_STATE = JointState()
 DEFAULT_JOINT_STATE.name = [f"joint{i}" for i in range(1, 7)]
+# DEFAULT_JOINT_STATE.name = [f"joint{i}" for i in range(1, 4)]
+# DEFAULT_JOINT_STATE.name = [f"joint{i}" for i in range(4, 7)]
 DEFAULT_JOINT_STATE.position = [0.0] * 6
 
 
@@ -24,8 +26,8 @@ class MockManipulatorNode:
         rospy.loginfo(f"Starting {node_name}...")
 
         self.publish_rate = rospy.get_param('~publish_rate', 50.0) # Hz
-        set_topic_name = rospy.get_param('~set_joint_states_topic', 'set_joint_states')
-        state_topic_name = rospy.get_param('~joint_states_topic', 'joint_states')
+        set_topic_name = rospy.get_param('~set_joint_states_topic', '/manip/set_joint_states')
+        state_topic_name = rospy.get_param('~joint_states_topic', '/manip/joint_states')
 
         self._latest_joint_state = DEFAULT_JOINT_STATE
 
