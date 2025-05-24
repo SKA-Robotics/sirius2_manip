@@ -20,6 +20,7 @@ class ArmControllerConfig:
     servo_gain: np.ndarray = np.array([20, 20, 20, 10, 10, 10])
     singularity_avoidance_A: float = 1.6    # Values based on paper
     singularity_avoidance_B: float = 1.491  # Values based on paper
+    max_setpoint_distance: float = 0.05
 
     # Robot params
     robot_urdf_path: str = "robot_urdf/sirius2_manip.urdf.xacro"
@@ -58,6 +59,9 @@ class ArmController:
         self.viz = viz
         self.compute_duration = 0
         self.loop_duration = 100
+        reach = self.robot.reach
+        print(reach)
+        print(type(reach))
 
     def loop(self):
         self.robot.q, _ = self.robot_interface.get_state()
@@ -114,8 +118,12 @@ class ArmController:
             ev = self.pose_servo.compute_pose_control(self.goal.T)
             qd = self.twist_controller.compute_twist_control(ev)
         elif self.command.type == CommandType.END_EFFECTOR_TWIST_CMD:
-            self.goal.T = self.goal.T @ sm.SE3.Trans(self.command.data[0] * dt, self.command.data[1] * dt, self.command.data[2] * dt).A
-            self.goal.T = self.goal.T @ sm.SE3.RPY(self.command.data[3] * dt, self.command.data[4] * dt, self.command.data[5] * dt).A
+            new_goal_T = self.goal.T
+            new_goal_T = new_goal_T @ sm.SE3.Trans(self.command.data[0] * dt, self.command.data[1] * dt, self.command.data[2] * dt).A
+            new_goal_T = new_goal_T @ sm.SE3.RPY(self.command.data[3] * dt, self.command.data[4] * dt, self.command.data[5] * dt).A
+            new_goal_T_position_error = np.linalg.norm(self.ee_axes.T[0:3, 3] - new_goal_T[0:3, 3])
+            if new_goal_T_position_error <= self.config.max_setpoint_distance:
+                self.goal.T = new_goal_T # The maximum distance from ee to goal is limited to avoid going far out of range of the arm
             ev = self.pose_servo.compute_pose_control(self.goal.T)
             qd = self.twist_controller.compute_twist_control(ev)
         elif self.command.type == CommandType.JOINT_VELOCITY_CMD:
