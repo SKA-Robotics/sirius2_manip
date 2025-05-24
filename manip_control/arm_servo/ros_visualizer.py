@@ -1,7 +1,7 @@
 from geometry_msgs.msg import PoseStamped
 from ros_middleware.base import RosMiddleware
 import numpy as np
-import spatialmath as sm
+from scipy.spatial.transform import Rotation as R
 
 class RosVisualizer:
     def __init__(self, ros: RosMiddleware, pose_goal_topic: str):
@@ -19,11 +19,11 @@ class RosVisualizer:
 
         rotation_matrix = pose[:3, :3]
         try:
-            quat = sm.Quaternion(rotation_matrix)
-            command.pose.orientation.x = quat.A[1]
-            command.pose.orientation.y = quat.A[2]
-            command.pose.orientation.z = quat.A[3]
-            command.pose.orientation.w = quat.A[0]
+            quat = R.from_matrix(rotation_matrix).as_quat()
+            command.pose.orientation.x = quat[0]
+            command.pose.orientation.y = quat[1]
+            command.pose.orientation.z = quat[2]
+            command.pose.orientation.w = quat[3]
 
             self.pose_goal_publisher.publish(command)
         except Exception as e:
