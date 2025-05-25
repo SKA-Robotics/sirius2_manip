@@ -24,7 +24,6 @@ class JoystickControlConfig:
 DEFAULT_CONFIG = JoystickControlConfig()
 
 MANIP_PRESET_DATABASE = {
-    # "ik_ready": [0.01, -0.22, 1.83, -1.4, -1.1, 0.6],
     "ik_ready": [0.0, -0.5, 1.85, -1.53, -0.96, -0.06],
 }
 

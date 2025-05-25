@@ -10,7 +10,7 @@ from arm_servo.ros_robot_interface import RosRobotInterface
 from arm_servo.ros_command_receiver import RosCommandReceiver
 from arm_servo.motion_control import TwistController, PoseServo, TrajectoryExecutor
 from arm_servo.ros_visualizer import RosVisualizer
-from arm_servo.utils import load_urdf
+from arm_servo.utils import load_urdf, angle_axis_error
 
 
 class ArmControllerConfig:
@@ -20,7 +20,8 @@ class ArmControllerConfig:
     servo_gain: np.ndarray = np.array([20, 20, 20, 10, 10, 10])
     singularity_avoidance_A: float = 1.6    # Values based on paper
     singularity_avoidance_B: float = 1.491  # Values based on paper
-    max_setpoint_distance: float = 0.05
+    max_setpoint_position_distance: float = 0.05
+    max_setpoint_orientation_distance: float = 0.12
     trajectory_duration: float = 6
 
     # Robot params
@@ -127,8 +128,13 @@ class ArmController:
             new_goal_T = self.goal.T
             new_goal_T = new_goal_T @ sm.SE3.Trans(self.command.data[0] * dt, self.command.data[1] * dt, self.command.data[2] * dt).A
             new_goal_T = new_goal_T @ sm.SE3.RPY(self.command.data[3] * dt, self.command.data[4] * dt, self.command.data[5] * dt).A
-            new_goal_T_position_error = np.linalg.norm(self.ee_axes.T[0:3, 3] - new_goal_T[0:3, 3])
-            if new_goal_T_position_error <= self.config.max_setpoint_distance:
+            # new_goal_T_position_error = np.linalg.norm(self.ee_axes.T[0:3, 3] - new_goal_T[0:3, 3])
+            # if new_goal_T_position_error <= self.config.max_setpoint_distance:
+            #     self.goal.T = new_goal_T # The maximum distance from ee to goal is limited to avoid going far out of range of the arm
+            new_goal_error = angle_axis_error(self.ee_axes.T, new_goal_T)
+            position_error = np.linalg.norm(new_goal_error[0:3])
+            orientation_error = np.linalg.norm(new_goal_error[3:6])
+            if position_error <= self.config.max_setpoint_position_distance and orientation_error <= self.config.max_setpoint_orientation_distance:
                 self.goal.T = new_goal_T # The maximum distance from ee to goal is limited to avoid going far out of range of the arm
             ev = self.pose_servo.compute_pose_control(self.goal.T)
             qd = self.twist_controller.compute_twist_control(ev)
