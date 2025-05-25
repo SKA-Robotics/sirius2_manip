@@ -36,6 +36,7 @@ class ArmControllerGui:
         manipulability = 100 * self.arm_controller.robot.manipulability(self.arm_controller.robot.q)
         self.window.addstr(6, 0, f"Manipulability: {np.round(manipulability, 2):<10}", curses.color_pair(1))
 
+        mode_str = "other mode"
         if self.arm_controller.command is not None:
             if self.arm_controller.command.type == CommandType.END_EFFECTOR_POSE_CMD:
                 mode_str = "pose servo (IK)"
@@ -43,6 +44,8 @@ class ArmControllerGui:
                 mode_str = "twist servo (IK)"
             elif self.arm_controller.command.type == CommandType.JOINT_VELOCITY_CMD:
                 mode_str = "joint control (FK)"
+            elif self.arm_controller.command.type == CommandType.TRAJECTORY_CMD:
+                mode_str = "trajectory"
             self.window.addstr(8, 0, f"Mode: {mode_str:<20}", curses.color_pair(1))
         
         self.window.addstr(10, 0, f"Compute time [ms]: {round(self.arm_controller.compute_duration * 1000):<5}rate: {round(1 / self.arm_controller.loop_duration, 2):<5}", curses.color_pair(1))
@@ -73,7 +76,7 @@ def main(window: curses.window):
     ros.start()
 
     robot_interface = RosRobotInterface(ros, config.robot_joint_names, config.robot_state_topic, config.robot_command_topic)
-    command_interface = RosCommandReceiver(ros, config.twist_topic, config.pose_topic, config.joint_topic)
+    command_interface = RosCommandReceiver(ros, config.twist_topic, config.pose_topic, config.joint_topic, config.preset_request_topic)
 
     if config.use_sim:
         from swift import Swift

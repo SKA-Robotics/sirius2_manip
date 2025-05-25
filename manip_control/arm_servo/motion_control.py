@@ -1,5 +1,7 @@
 import numpy as np
 import roboticstoolbox as rtb
+from roboticstoolbox.tools.trajectory import Trajectory
+from typing import Optional
 
 
 
@@ -66,3 +68,24 @@ class PoseServo:
         ev, _ = rtb.p_servo(Te, Td, self.gain, threshold=0.001, method="rpy")
 
         return ev
+
+
+class TrajectoryExecutor:
+    def __init__(self):
+        self._trajectory: Optional[Trajectory] = None
+        self._idx = 0
+        self.running = False
+    
+    def set_trajectory(self, trajectory: Trajectory):
+        self._idx = 0
+        self._trajectory = trajectory
+        self.running = True
+    
+    def step(self) -> np.ndarray:
+        if not self.running:
+            raise IndexError("Called step() on TrajectoryExecutor which is not running")
+        q = self._trajectory.q[self._idx]
+        self._idx += 1
+        if self._idx == len(self._trajectory):
+            self.running = False
+        return q

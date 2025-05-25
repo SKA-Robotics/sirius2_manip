@@ -1,5 +1,6 @@
 from geometry_msgs.msg import TwistStamped, PoseStamped
 from control_msgs.msg import JointJog
+from sensor_msgs.msg import JointState
 from arm_servo.command import Command, CommandType
 from ros_middleware.base import RosMiddleware
 
@@ -12,13 +13,14 @@ import threading
 
 class RosCommandReceiver:
 
-    def __init__(self, ros: RosMiddleware, twist_topic: str, pose_topic: str, joint_topic: str):
+    def __init__(self, ros: RosMiddleware, twist_topic: str, pose_topic: str, joint_topic: str, preset_request_topic: str):
         self.ros = ros
         self.command_lock = threading.Lock()
         self.command = None
         self.ros.create_subscriber(twist_topic, TwistStamped, self.twist_callback)
         self.ros.create_subscriber(pose_topic, PoseStamped, self.pose_callback)
         self.ros.create_subscriber(joint_topic, JointJog, self.joint_callback)
+        self.ros.create_subscriber(preset_request_topic, JointState, self.preset_request_callback)
 
     def twist_callback(self, twist: TwistStamped):
         # TODO: Recalculate twist to correct frame
@@ -50,6 +52,10 @@ class RosCommandReceiver:
     def joint_callback(self, joint_jog: JointJog):
         with self.command_lock:
             self.command = Command(CommandType.JOINT_VELOCITY_CMD, np.array(joint_jog.velocities), time.time())
+    
+    def preset_request_callback(self, jointstate: JointState):
+        with self.command_lock:
+            self.command = Command(CommandType.TRAJECTORY_CMD, np.array(jointstate.position), time.time())
 
     def pop_command(self) -> Optional[Command]:
         """ 

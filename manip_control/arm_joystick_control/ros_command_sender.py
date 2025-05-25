@@ -1,15 +1,17 @@
 from typing import List
 from geometry_msgs.msg import TwistStamped
 from control_msgs.msg import JointJog
+from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
 from ros_middleware.base import RosMiddleware
 
 class RosCommandSender:
-    def __init__(self, ros: RosMiddleware, twist_topic: str, joint_topic: str, gripper_topic: str):
+    def __init__(self, ros: RosMiddleware, twist_topic: str, joint_topic: str, gripper_topic: str, preset_publisher_topic: str):
         self.ros = ros
         self.twist_publisher = self.ros.create_publisher(twist_topic, TwistStamped)
         self.joint_publisher = self.ros.create_publisher(joint_topic, JointJog)
         self.gripper_publisher = self.ros.create_publisher(gripper_topic, Float64)
+        self.preset_publisher = self.ros.create_publisher(preset_publisher_topic, JointState)
 
     def send_twist_command(self, twist_data: List[float], frame_id: str):
         command = TwistStamped()
@@ -33,3 +35,8 @@ class RosCommandSender:
         command = Float64()
         command.data = gripper_position
         self.gripper_publisher.publish(command)
+    
+    def send_preset_command(self, target_q: List[float]):
+        command = JointState()
+        command.position = target_q
+        self.preset_publisher.publish(command)

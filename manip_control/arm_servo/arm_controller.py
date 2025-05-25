@@ -8,7 +8,7 @@ from typing import List
 from arm_servo.command import Command, CommandType
 from arm_servo.ros_robot_interface import RosRobotInterface
 from arm_servo.ros_command_receiver import RosCommandReceiver
-from arm_servo.motion_control import TwistController, PoseServo
+from arm_servo.motion_control import TwistController, PoseServo, TrajectoryExecutor
 from arm_servo.ros_visualizer import RosVisualizer
 from arm_servo.utils import load_urdf
 
@@ -21,6 +21,7 @@ class ArmControllerConfig:
     singularity_avoidance_A: float = 1.6    # Values based on paper
     singularity_avoidance_B: float = 1.491  # Values based on paper
     max_setpoint_distance: float = 0.05
+    trajectory_duration: float = 6
 
     # Robot params
     robot_urdf_path: str = "robot_urdf/sirius2_manip.urdf.xacro"
@@ -31,6 +32,7 @@ class ArmControllerConfig:
     twist_topic: str = "/twist_cmd"
     pose_topic: str = "/pose_cmd"
     joint_topic: str = "/joint_cmd"
+    preset_request_topic: str = "/preset_request"
     robot_state_topic: str = "/manip/joint_states"
     robot_command_topic: str = "/manip/set_joint_states"
     robot_joint_names: List[str] = ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6"]
@@ -52,6 +54,7 @@ class ArmController:
         self.robot = load_urdf(config.robot_urdf_path)
         self.pose_servo = PoseServo(self.robot, gain=config.servo_gain)
         self.twist_controller = TwistController(self.robot, config.singularity_avoidance_A, config.singularity_avoidance_B)
+        self.trajectory_executor = TrajectoryExecutor()
         self.goal = sg.Axes(0.1)
         self.ee_axes = sg.Axes(0.1)
         self.command_timeout = config.command_timeout
@@ -59,9 +62,6 @@ class ArmController:
         self.viz = viz
         self.compute_duration = 0
         self.loop_duration = 100
-        reach = self.robot.reach
-        print(reach)
-        print(type(reach))
 
     def loop(self):
         self.robot.q, _ = self.robot_interface.get_state()
@@ -72,8 +72,12 @@ class ArmController:
         while True:
             loop_start_time = time.monotonic()
             self.command = self.command_interface.pop_command()
-            qd = self.compute_control(dt)
-            self.robot.q = self.robot.q + qd * dt
+            if self.trajectory_executor.running:
+                self.robot.q = self.trajectory_executor.step()
+                self.goal.T = self.robot.fkine(self.robot.q, tool=self.robot.tool).A
+            else:
+                qd = self.compute_control(dt)
+                self.robot.q = self.robot.q + qd * dt
 
             # Clamp joint values to the joint limits
             for i in range(self.robot.n):
@@ -106,6 +110,7 @@ class ArmController:
         Returns:
             np.ndarray: The joint velocities required to execute the command.
         """
+
         if self.command is not None and self.command.timestamp < time.time() - self.command_timeout:
             print(f"Command timed out: {self.command.timestamp} < {time.time() - self.command_timeout}")
             self.command = None
@@ -117,6 +122,7 @@ class ArmController:
             self.goal.T = self.command.data
             ev = self.pose_servo.compute_pose_control(self.goal.T)
             qd = self.twist_controller.compute_twist_control(ev)
+
         elif self.command.type == CommandType.END_EFFECTOR_TWIST_CMD:
             new_goal_T = self.goal.T
             new_goal_T = new_goal_T @ sm.SE3.Trans(self.command.data[0] * dt, self.command.data[1] * dt, self.command.data[2] * dt).A
@@ -126,18 +132,19 @@ class ArmController:
                 self.goal.T = new_goal_T # The maximum distance from ee to goal is limited to avoid going far out of range of the arm
             ev = self.pose_servo.compute_pose_control(self.goal.T)
             qd = self.twist_controller.compute_twist_control(ev)
+
         elif self.command.type == CommandType.JOINT_VELOCITY_CMD:
             if len(self.command.data) != self.robot.n:
                 print(f"Command received for {len(self.command.data)} joints, but robot has {self.robot.n} joints")
                 self.command = Command(CommandType.JOINT_VELOCITY_CMD, np.zeros(self.robot.n), time.time())
             self.goal.T = self.robot.fkine(self.robot.q, tool=self.robot.tool).A # reset the end effector pose goal
             qd = self.command.data
-        # elif self.command.type == CommandType.TRAJECTORY_CMD:
-        #     qd = self.command.data[self.trajectory_idx]
-        #     self.trajectory_idx += 1
-        #     if self.trajectory_idx >= len(self.command.data):
-        #         self.trajectory_idx = 0
-        #         self.running = False
+
+        elif self.command.type == CommandType.TRAJECTORY_CMD:
+            trajectory = rtb.jtraj(self.robot.q, np.array(self.command.data), int(self.config.trajectory_duration/dt))
+            self.trajectory_executor.set_trajectory(trajectory)
+            return np.zeros(self.robot.n)
+
         else:
             print(f"Unknown command type: {self.command.type}")
             return np.zeros(self.robot.n)
@@ -162,7 +169,7 @@ def main():
     ros.start()
 
     robot_interface = RosRobotInterface(ros, config.robot_joint_names, config.robot_state_topic, config.robot_command_topic)
-    command_interface = RosCommandReceiver(ros, config.twist_topic, config.pose_topic, config.joint_topic)
+    command_interface = RosCommandReceiver(ros, config.twist_topic, config.pose_topic, config.joint_topic, config.preset_request_topic)
 
     if config.use_sim:
         from swift import Swift

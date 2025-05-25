@@ -5,6 +5,7 @@ from arm_joystick_control.ros_joy_receiver import RosJoyReceiver
 from arm_joystick_control.ros_command_sender import RosCommandSender
 from arm_joystick_control.utils import max_abs, trig_to_axis
 import time
+import yaml
 
 class JoystickControlConfig:
     max_linear_velocity: float = 0.2
@@ -16,10 +17,16 @@ class JoystickControlConfig:
     twist_topic: str = "/twist_cmd"
     joint_topic: str = "/joint_cmd"
     gripper_topic: str = "/gripper_cmd"
+    preset_request_topic: str = "/preset_request"
     joy_topic: str = "/joy"
     ros_version: str = "ros1"
 
 DEFAULT_CONFIG = JoystickControlConfig()
+
+MANIP_PRESET_DATABASE = {
+    # "ik_ready": [0.01, -0.22, 1.83, -1.4, -1.1, 0.6],
+    "ik_ready": [0.0, -0.5, 1.85, -1.53, -0.96, -0.06],
+}
 
 class JoystickControl():
 
@@ -43,6 +50,7 @@ class JoystickControl():
         SET_FRAME_BASE = 2
         SET_JOINT_MODE = 3
         CHANGE_MOVEMENT_MODE = 4
+        GOTO_IK_READY = 5
 
     class SpaceMode(Enum):
         CARTESIAN = 0
@@ -62,7 +70,7 @@ class JoystickControl():
         self.ros = self._start_ros(config)
         self.ros.start()
         self.joy_receiver = RosJoyReceiver(self.ros, config.joy_topic)
-        self.command_sender = RosCommandSender(self.ros, config.twist_topic, config.joint_topic, config.gripper_topic)
+        self.command_sender = RosCommandSender(self.ros, config.twist_topic, config.joint_topic, config.gripper_topic, config.preset_request_topic)
     
     def run(self):
         self.joy_receiver.register_callback(self.receive_command)
@@ -77,10 +85,13 @@ class JoystickControl():
     def receive_command(self, raw_axes: List[float], raw_buttons: List[int]):
         buttons = self._process_buttons(raw_buttons)
         self._handle_buttons(buttons)
-        self._update_gui(raw_axes, raw_buttons)
-        axes  = self._process_axes(raw_axes)
-        self._publish_command(axes)
-        self._control_gripper(axes[self.Axis.GRIPPER])
+        if buttons[self.Button.GOTO_IK_READY]:
+            self._send_preset_request("ik_ready")
+        else:
+            self._update_gui(raw_axes, raw_buttons)
+            axes  = self._process_axes(raw_axes)
+            self._publish_command(axes)
+            self._control_gripper(axes[self.Axis.GRIPPER])
     
     def _process_axes(self, axes: List[float]) -> Dict[Axis, float]:
         return  {
@@ -105,6 +116,7 @@ class JoystickControl():
             self.Button.SET_FRAME_TOOL: buttons[1],
             self.Button.SET_JOINT_MODE: buttons[2],
             self.Button.CHANGE_MOVEMENT_MODE: buttons[4] or buttons[5],
+            self.Button.GOTO_IK_READY: buttons[3],
         }
 
     def _handle_buttons(self, buttons: Dict[Button, bool]):
@@ -187,6 +199,13 @@ class JoystickControl():
         else:
             raise ValueError(f"Invalid ROS version: {config.ros_version}. Must be either 'ros1' or 'ros2'.")
         return ros
+    
+    def _send_preset_request(self, preset_name: str):
+        if preset_name not in MANIP_PRESET_DATABASE:
+            print(f"Manip preset {preset_name} is not defined")
+            return
+        target_q = MANIP_PRESET_DATABASE[preset_name]
+        self.command_sender.send_preset_command(target_q)
 
 
 if __name__ == "__main__":
